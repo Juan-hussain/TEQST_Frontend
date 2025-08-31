@@ -1,8 +1,9 @@
-import {Observable} from 'rxjs';
+import {Observable, interval} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {NavController} from '@ionic/angular';
 import {ActivatedRoute} from '@angular/router';
+import {takeWhile, switchMap} from 'rxjs/operators';
 
 import {RegisterForm} from 'src/app/interfaces/register-form';
 import {User} from 'src/app/interfaces/user';
@@ -19,6 +20,7 @@ export class AuthenticationService {
   SERVER_URL = Constants.SERVER_URL;
   private httpOptions;
   private dataFromServer: any = '';
+  private tokenValidationInterval: any;
 
   constructor(public http: HttpClient,
               public navCtrl: NavController,
@@ -44,6 +46,9 @@ export class AuthenticationService {
               'Token',
               'Token ' + JSON.parse(this.dataFromServer).token);
           this.usermgmtService.storeUserData(userData);
+
+          // Start periodic token validation
+          this.startTokenValidation();
 
           // redirect user
           if (this.route.snapshot.queryParamMap.has('next')) {
@@ -75,9 +80,64 @@ export class AuthenticationService {
          because on back button press the page isn't refreshed */
       this.usermgmtService.deleteStoredUserData();
       this.usermgmtService.clearLoggingData();
+      this.stopTokenValidation();
       // this.navCtrl.navigateForward('/login');
       this.navCtrl.navigateRoot('/login');
     });
+  }
+
+  // Check if user has a valid token by making a request to validate it
+  validateToken(): Observable<boolean> {
+    const url = this.SERVER_URL + '/api/user/';
+    return new Observable(observer => {
+      this.http.get(url).subscribe(
+        () => {
+          observer.next(true);
+          observer.complete();
+        },
+        (error) => {
+          if (error.status === 401) {
+            // Token is invalid, clear user data
+            this.usermgmtService.deleteStoredUserData();
+            this.usermgmtService.clearLoggingData();
+            this.stopTokenValidation();
+            observer.next(false);
+            observer.complete();
+          } else {
+            // Other error, assume token is still valid
+            observer.next(true);
+            observer.complete();
+          }
+        }
+      );
+    });
+  }
+
+  // Start periodic token validation (every 5 minutes)
+  startTokenValidation(): void {
+    this.stopTokenValidation(); // Clear any existing interval
+    
+    this.tokenValidationInterval = interval(5 * 60 * 1000) // 5 minutes
+      .pipe(
+        takeWhile(() => this.isLoggedIn()),
+        switchMap(() => this.validateToken())
+      )
+      .subscribe(
+        (isValid) => {
+          if (!isValid) {
+            // Token is invalid, force logout
+            this.forceLogout();
+          }
+        }
+      );
+  }
+
+  // Stop periodic token validation
+  stopTokenValidation(): void {
+    if (this.tokenValidationInterval) {
+      this.tokenValidationInterval.unsubscribe();
+      this.tokenValidationInterval = null;
+    }
   }
 
   isLoggedIn(): boolean {
@@ -85,4 +145,11 @@ export class AuthenticationService {
     return !(localStorage.getItem('Token') === null);
   }
 
+  // Force logout and redirect to login page
+  forceLogout(): void {
+    this.usermgmtService.deleteStoredUserData();
+    this.usermgmtService.clearLoggingData();
+    this.stopTokenValidation();
+    this.navCtrl.navigateRoot('/login');
+  }
 }

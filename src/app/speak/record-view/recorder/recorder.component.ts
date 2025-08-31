@@ -145,6 +145,7 @@ export class RecorderComponent implements OnInit, OnDestroy {
   }
 
   startRecording(): void {
+    console.log('Recorder component: startRecording called');
     this.recordingService.startRecording();
   }
 

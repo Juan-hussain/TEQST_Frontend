@@ -17,6 +17,8 @@ const routes: Routes = [
     loadChildren: ()
     :Promise<TabsPageModule> => import('./tabs/tabs.module')
         .then((m) => m.TabsPageModule),
+    data: {requiresLogin: true},
+    canActivate: [AccessGuard],
   },
   {
     path: 'speak/:publisherId/:folderId/:textId',
@@ -24,6 +26,8 @@ const routes: Routes = [
     :Promise<RecordViewPageModule> =>
       import('./speak/record-view/record-view.module')
           .then( (m) => m.RecordViewPageModule),
+    data: {requiresLogin: true},
+    canActivate: [AccessGuard],
   },
   {
     path: 'documentation',
@@ -31,6 +35,16 @@ const routes: Routes = [
     :Promise<DocumentationPageModule> =>
       import('./help/documentation/documentation.module')
           .then( (m) => m.DocumentationPageModule),
+    data: {requiresLogin: true},
+    canActivate: [AccessGuard],
+  },
+  {
+    path: 'listen',
+    loadChildren: ()
+    :Promise<ListenPageModule> =>
+      import('./listen/listen.module').then( (m) => m.ListenPageModule),
+    data: {requiresLogin: true},
+    canActivate: [AccessGuard],
   },
   {
     path: '',
@@ -45,11 +59,6 @@ const routes: Routes = [
     component: PageNotFoundComponent,
     data: {requiresLogin: true},
     canActivate: [AccessGuard],
-  }, {
-    path: 'listen',
-    loadChildren: ()
-    :Promise<ListenPageModule> =>
-      import('./listen/listen.module').then( (m) => m.ListenPageModule),
   },
 ];
 

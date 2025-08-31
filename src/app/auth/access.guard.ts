@@ -44,6 +44,29 @@ export class AccessGuard implements CanActivate {
           this.router.navigate(['/login'], {queryParams: {next: state.url}});
           return false;
         }
+      } else {
+        // User has a token, validate it with the server
+        return new Observable(observer => {
+          this.authService.validateToken().subscribe(
+            (isValid) => {
+              if (isValid) {
+                observer.next(true);
+                observer.complete();
+              } else {
+                // Token is invalid, redirect to login
+                this.router.navigate(['/login'], {queryParams: {next: state.url}});
+                observer.next(false);
+                observer.complete();
+              }
+            },
+            () => {
+              // Error occurred during validation, redirect to login
+              this.router.navigate(['/login'], {queryParams: {next: state.url}});
+              observer.next(false);
+              observer.complete();
+            }
+          );
+        });
       }
     }
     // Only allow access to the route if the user is publisher

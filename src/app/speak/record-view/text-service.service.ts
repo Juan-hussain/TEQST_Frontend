@@ -54,18 +54,23 @@ export class TextServiceService {
   }
 
   private fetchText(): void {
+    console.log('fetchText called for textId:', this.textId, 'root:', this.root_uid);
     // fetch TextData from Server
     const textUrl = this.SERVER_URL +
         `/api/spk/texts/${this.textId}?root=${this.root_uid}`;
 
     this.http.get(textUrl, {}).subscribe((text) => {
+      console.log('Text data received:', text);
       this.textTitle.next(text['title']);
       this.totalSentenceNumber.next(text['content'].length);
       this.sentences.next(text['content']);
       this.isRightToLeft.next(text['is_right_to_left']);
       this.sharedfolderId = parseInt(text['shared_folder']);
       this.isTextFetched = true;
+      console.log('Text fetched, isTextFetched:', this.isTextFetched);
       this.initActiveSentenceIfReady();
+    }, (error) => {
+      console.error('Error fetching text:', error);
     });
   }
 
@@ -90,12 +95,14 @@ export class TextServiceService {
      and if so,
      set the local recording info to the data from the server */
   async checkIfRecordingInfoExists(): Promise<boolean> {
+    console.log('checkIfRecordingInfoExists called for textId:', this.textId);
     let result = false;
     const getRecordingInfoUrl = this.SERVER_URL +
       `/api/spk/textrecordings/?text=${this.textId}`;
 
     await this.http.get(getRecordingInfoUrl).toPromise()
         .then((info) => {
+          console.log('Recording info received:', info);
           this.isRecordingExistsChecked = true;
           if (info === null) {
             result = false;
@@ -103,6 +110,7 @@ export class TextServiceService {
             this.setRecordingInfo(info[0]);
             result = true;
           }
+          console.log('Recording info checked, isRecordingExistsChecked:', this.isRecordingExistsChecked);
         });
     return result;
   }
@@ -141,9 +149,13 @@ export class TextServiceService {
   }
 
   initActiveSentenceIfReady(): void {
+    console.log('initActiveSentenceIfReady called, isTextFetched:', this.isTextFetched, 'isRecordingExistsChecked:', this.isRecordingExistsChecked);
     if (this.isTextFetched && this.isRecordingExistsChecked) {
+      console.log('Both conditions met, setting isLoaded to true');
       this.initActiveSentence();
       this.isLoaded.next(true);
+    } else {
+      console.log('Conditions not met yet');
     }
   }
 
@@ -199,6 +211,7 @@ export class TextServiceService {
   }
 
   setSentencesRecordingStatus(statusList: SentenceStatus[]): void {
+    console.log(`setSentencesRecordingStatus: updating status list:`, statusList);
     this.sentencesRecordingStatus.next(statusList);
   }
 
@@ -216,12 +229,17 @@ export class TextServiceService {
   }
 
   // check if the current active sentence is already recorded
-  private checkRecordingStatus(): void {
-    if (this.isTextFetched && this.isRecordingExistsChecked &&
-      this.activeSentenceIndex.getValue() <
-      this.furthestSentenceIndex.getValue()) {
-      this.sentenceHasRecording.next(true);
+  public checkRecordingStatus(): void {
+    if (this.isTextFetched && this.isRecordingExistsChecked) {
+      const currentIndex = this.activeSentenceIndex.getValue();
+      const statusList = this.sentencesRecordingStatus.getValue();
+      
+      // Check if the current sentence actually has a recording by looking at the status list
+      const hasRecording = statusList.some(status => status.index === currentIndex);
+      console.log(`checkRecordingStatus: sentence ${currentIndex}, hasRecording: ${hasRecording}, statusList:`, statusList);
+      this.sentenceHasRecording.next(hasRecording);
     } else {
+      console.log(`checkRecordingStatus: conditions not met, isTextFetched: ${this.isTextFetched}, isRecordingExistsChecked: ${this.isRecordingExistsChecked}`);
       this.sentenceHasRecording.next(false);
     }
   }

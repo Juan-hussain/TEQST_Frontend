@@ -8,6 +8,7 @@ import {
 } from '@angular/common/http';
 import {Observable, throwError} from 'rxjs';
 import {catchError, retry} from 'rxjs/operators';
+import {Router} from '@angular/router';
 
 import {UsermgmtService} from 'src/app/services/usermgmt.service';
 import {AlertManagerService} from 'src/app/services/alert-manager.service';
@@ -20,7 +21,8 @@ export class ServerErrorInterceptorService implements HttpInterceptor {
 
   constructor(private alertService: AlertManagerService,
               private userService: UsermgmtService,
-              private injector: Injector) {}
+              private injector: Injector,
+              private router: Router) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler):
     Observable<HttpEvent<any>> {
@@ -43,7 +45,10 @@ export class ServerErrorInterceptorService implements HttpInterceptor {
               if (request.url == '/api/auth/login/') {
                 this.alertService.presentLoginFailedAlert();
               } else {
-                this.alertService.presentNotLoggedInAlert();
+                // For any other 401 error, redirect to login page
+                this.userService.deleteStoredUserData();
+                this.router.navigate(['/login']);
+                return;
               }
               return;
             }

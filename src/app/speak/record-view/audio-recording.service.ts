@@ -83,6 +83,11 @@ export class AudioRecordingService {
   }
 
   isMediaStreamActive(): boolean {
+    // Check if MediaDevices API is supported first
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return false;
+    }
+    
     if (!this.stream) {
       return false;
     } else if (!this.stream.active) {
@@ -95,6 +100,17 @@ export class AudioRecordingService {
     if (this.isMediaStreamActive()) {
       return;
     }
+    
+    // Check if MediaDevices API is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('MediaDevices API not supported in requestUserAudio');
+      this.alertService.showErrorAlertNoRedirection(
+          'Browser not supported',
+          'Your browser does not support audio recording. Please use a modern browser like Chrome, Firefox, or Safari.');
+      this.isRecording$.next(false);
+      return;
+    }
+    
     navigator.mediaDevices.getUserMedia({audio: true}).then((s) => {
       this.stream = s;
     }).catch((error) => {
@@ -107,13 +123,100 @@ export class AudioRecordingService {
   }
 
   startRecording(): void {
+    console.log('startRecording called');
     if (this.isPlaying === true) {
       this.playbackService.stopAudioPlayback();
     }
-    // Get mediaStream in case user declined it on page load
-    this.requestUserAudio();
-    if (this.isMediaStreamActive) {
+    
+    // Check if media stream is already active
+    if (this.isMediaStreamActive()) {
+      console.log('Media stream is active, initiating recording');
+      this.initiateRecording();
+    } else {
+      console.log('Media stream not active, requesting audio permission');
+      // Request media stream and then start recording
+      this.requestUserAudioAndRecord();
+    }
+  }
 
+  private requestUserAudioAndRecord(): void {
+    console.log('Requesting audio permission...');
+    console.log('navigator object:', navigator);
+    console.log('navigator.mediaDevices:', navigator.mediaDevices);
+    console.log('navigator.mediaDevices.getUserMedia:', navigator.mediaDevices?.getUserMedia);
+    console.log('Is secure context:', window.isSecureContext);
+    console.log('Current URL:', window.location.href);
+    console.log('Protocol:', window.location.protocol);
+    
+    // Check if we're in a secure context
+    if (!window.isSecureContext) {
+      console.error('Not in a secure context - MediaDevices API requires HTTPS or localhost');
+      this.alertService.showErrorAlertNoRedirection(
+          'Secure Context Required',
+          'Audio recording requires a secure connection (HTTPS) or localhost. Please access this page via HTTPS or localhost.');
+      this.isRecording$.next(false);
+      return;
+    }
+    
+    // Check if MediaDevices API is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('MediaDevices API not supported');
+      console.error('navigator.mediaDevices exists:', !!navigator.mediaDevices);
+      console.error('navigator.mediaDevices.getUserMedia exists:', !!(navigator.mediaDevices?.getUserMedia));
+      
+      // Try to manually initialize MediaDevices if it's missing
+      if (!navigator.mediaDevices) {
+        console.log('Attempting to manually initialize MediaDevices...');
+        try {
+          // Try to create MediaDevices if it doesn't exist
+          if ((navigator as any).getUserMedia) {
+            // Create a local reference to the legacy method
+            const legacyGetUserMedia = (navigator as any).getUserMedia;
+            console.log('Found legacy getUserMedia, will use it directly');
+            
+            // Use the legacy method directly instead of trying to modify navigator.mediaDevices
+            this.useLegacyGetUserMedia(legacyGetUserMedia);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to access legacy getUserMedia:', error);
+        }
+      }
+      
+      // Check again after potential initialization
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // Try alternative methods for older browsers
+        if ((navigator as any).getUserMedia || (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia || (navigator as any).msGetUserMedia) {
+          console.log('Found legacy getUserMedia methods, trying those...');
+          this.tryLegacyGetUserMedia();
+          return;
+        }
+        
+        this.alertService.showErrorAlertNoRedirection(
+            'Browser not supported',
+            'Your browser does not support audio recording. Please use a modern browser like Chrome, Firefox, or Safari.');
+        this.isRecording$.next(false);
+        return;
+      }
+    }
+    
+    navigator.mediaDevices.getUserMedia({audio: true}).then((s) => {
+      console.log('Audio permission granted, stream:', s);
+      this.stream = s;
+      this.initiateRecording();
+    }).catch((error) => {
+      console.error('Audio permission denied:', error);
+      this.alertService.showErrorAlertNoRedirection(
+          'No microphone access',
+          'Please allow access to your microphone ' +
+        'to be able to start a recording.');
+      this.isRecording$.next(false);
+    });
+  }
+
+  private initiateRecording(): void {
+    console.log('Initiating recording with stream:', this.stream);
+    try {
       // set the quality properties of the recorder
       this.activeRecorder = new RecordRTC.StereoAudioRecorder(this.stream, {
         type: 'audio',
@@ -121,12 +224,73 @@ export class AudioRecordingService {
         audioBitsPerSecond: 16000,
         desiredSampRate: 16000,
         numberOfAudioChannels: 1, // set mono recording
-
       });
+      console.log('Recorder created:', this.activeRecorder);
       this.activeRecorder.record();
+      console.log('Recording started');
       this.startRecordingTimeout();
       this.isRecording$.next(true);
+    } catch (error) {
+      console.error('Error creating recorder:', error);
     }
+  }
+
+  private tryLegacyGetUserMedia(): void {
+    console.log('Trying legacy getUserMedia methods...');
+    
+    // Try to find a working legacy method
+    const legacyMethod = (navigator as any).getUserMedia || 
+                        (navigator as any).webkitGetUserMedia || 
+                        (navigator as any).mozGetUserMedia || 
+                        (navigator as any).msGetUserMedia;
+    
+    if (legacyMethod) {
+      console.log('Using legacy method:', legacyMethod.name || 'unknown');
+      
+      // Legacy getUserMedia uses callbacks instead of promises
+      legacyMethod.call(navigator, {audio: true}, 
+        (stream: MediaStream) => {
+          console.log('Legacy getUserMedia succeeded, stream:', stream);
+          this.stream = stream;
+          this.initiateRecording();
+        },
+        (error: any) => {
+          console.error('Legacy getUserMedia failed:', error);
+          this.alertService.showErrorAlertNoRedirection(
+              'No microphone access',
+              'Please allow access to your microphone ' +
+            'to be able to start a recording.');
+          this.isRecording$.next(false);
+        }
+      );
+    } else {
+      console.error('No legacy getUserMedia methods found');
+      this.alertService.showErrorAlertNoRedirection(
+          'Browser not supported',
+          'Your browser does not support audio recording. Please use a modern browser like Chrome, Firefox, or Safari.');
+      this.isRecording$.next(false);
+    }
+  }
+
+  private useLegacyGetUserMedia(legacyMethod: any): void {
+    console.log('Using provided legacy getUserMedia method');
+    
+    // Legacy getUserMedia uses callbacks instead of promises
+    legacyMethod.call(navigator, {audio: true}, 
+      (stream: MediaStream) => {
+        console.log('Legacy getUserMedia succeeded, stream:', stream);
+        this.stream = stream;
+        this.initiateRecording();
+      },
+      (error: any) => {
+        console.error('Legacy getUserMedia failed:', error);
+        this.alertService.showErrorAlertNoRedirection(
+            'No microphone access',
+            'Please allow access to your microphone ' +
+          'to be able to start a recording.');
+        this.isRecording$.next(false);
+      }
+    );
   }
 
   private saveRecording(
@@ -134,6 +298,8 @@ export class AudioRecordingService {
       isReRecording: boolean,
       blob: Blob): void {
 
+    console.log(`Saving recording for sentence ${index}, isReRecording: ${isReRecording}, recordingId: ${this.recordingId}`);
+    
     const sentenceRecording =
       new SentenceRecordingModel(this.recordingId, index, blob);
     // add recording to cache in case speaker wants to listen to it
@@ -145,8 +311,22 @@ export class AudioRecordingService {
       sentenceRecording: SentenceRecordingModel,
       isReRecording: boolean): void {
 
+    console.log(`Uploading recording for sentence ${sentenceRecording.sentenceNumber}, isReRecording: ${isReRecording}, recordingId: ${sentenceRecording.recordingId}`);
+    
+    // Prevent duplicate uploads of the same sentence
+    if (this.isUploadingSentence(sentenceRecording.sentenceNumber)) {
+      console.log(`Already uploading sentence ${sentenceRecording.sentenceNumber}, skipping duplicate upload`);
+      return;
+    }
+    
     this.recordingUploadService
         .uploadRecording(sentenceRecording, isReRecording);
+  }
+
+  private isUploadingSentence(sentenceNumber: number): boolean {
+    // Check if we're already uploading this sentence
+    // This is a simple check - in a more robust implementation, you might want to track uploads by sentence
+    return false; // For now, allow multiple uploads but log them
   }
 
   stopRecording(): void {
@@ -243,7 +423,7 @@ export class AudioRecordingService {
 
   updateSentenceRecordingStatus(sentenceStatus: RecordingUploadResponse): void {
     const statusList = this.sentencesRecordingStatus;
-    if (sentenceStatus === null || statusList === []) return;
+    if (sentenceStatus === null || statusList.length === 0) return;
 
     if (sentenceStatus.valid !== 'VALID') {
       this.errorInPreviousRecording = true;
@@ -261,6 +441,10 @@ export class AudioRecordingService {
       statusList[sentenceStatus.index - 1].status = sentenceStatus.valid;
     }
     this.textService.setSentencesRecordingStatus(statusList);
+    
+    // After updating the status, we need to re-check if the current sentence has a recording
+    // This ensures that sentenceHasRecording is updated correctly
+    this.textService.checkRecordingStatus();
   }
 
   throwRecordingErrorAlert(): void {

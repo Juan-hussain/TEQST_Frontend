@@ -75,9 +75,20 @@ export class SelectSpeakerPage implements OnInit {
         folderId, data.listenerIds, data.speakerIds, data.accents, data.allSpeakers,
     ).subscribe((res) => {
       console.log('worked');
-      this.navComponent.popToRoot();
+
+      //  Now sync with SharedFolder.speaker
+      this.shareFolderService.setSharingSpeakers(
+        folderId, data.speakerIds, data.allSpeakers
+      ).subscribe(() => {
+        console.log('Speaker list updated');
+	this.navComponent.popToRoot();
+      }, (err) => {
+        console.error('Failed to update speaker list', err);
+        this.navComponent.popToRoot();
+      });
     }, (err) => {
       console.log('error!!');
+      alert('Could not create listener permission');
     });
 
 
@@ -89,11 +100,24 @@ export class SelectSpeakerPage implements OnInit {
   updateListening(): void {
     console.log('update listening');
     const listeningId = this.listenerData.getListeningId();
+    const folderId = this.listenerData.getFolderId();
     const data = this.getValidatedListeningData();
     this.shareFolderService.updateListening(
         listeningId, data.listenerIds, data.speakerIds, data.accents, data.allSpeakers,
     ).subscribe((res) => {
       console.log('worked');
+
+      //  Also update speaker list in SharedFolder
+      this.shareFolderService.setSharingSpeakers(
+        folderId, data.speakerIds, data.allSpeakers
+      ).subscribe(() => {
+        console.log('Speaker list synced');
+        this.navComponent.popToRoot();
+      }, (err) => {
+        console.error('Speaker update failed', err);
+        this.navComponent.popToRoot();
+      });
+
       this.navComponent.popToRoot();
     }, (err) => {
       alert('could not create listening');
