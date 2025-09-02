@@ -24,6 +24,8 @@ import {PageNotFoundComponent} from './page-not-found/page-not-found.component';
 import {environment} from '../environments/environment';
 import {ServerAuthtokenInterceptorService}
   from './interceptors/server-authtoken-interceptor.service';
+import {TextEncodingInterceptorService}
+  from './interceptors/text-encoding-interceptor.service';
 
 @NgModule({
   exports: [
@@ -73,6 +75,11 @@ import {ServerAuthtokenInterceptorService}
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ServerAuthtokenInterceptorService,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TextEncodingInterceptorService,
       multi: true,
     },
   ],

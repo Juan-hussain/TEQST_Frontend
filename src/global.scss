@@ -160,3 +160,35 @@ ion-note {
     --ion-text-color: #000000;
     --ion-text-color-rgb: 0, 0, 0;
 }
+
+/* Text encoding and direction support */
+.rtl-text {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: embed;
+    font-family: 'Arial', 'Tahoma', 'Amiri', 'Scheherazade New', sans-serif;
+}
+
+.ltr-text {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: embed;
+}
+
+/* Ensure proper text rendering for all text elements */
+ion-content p,
+ion-content div,
+ion-item,
+ion-label,
+ion-input,
+ion-textarea {
+    unicode-bidi: embed;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Fix for text with mixed encodings */
+.text-content {
+    font-variant-ligatures: none;
+    text-rendering: optimizeLegibility;
+}
