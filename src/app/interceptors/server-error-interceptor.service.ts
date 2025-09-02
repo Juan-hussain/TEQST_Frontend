@@ -42,15 +42,15 @@ export class ServerErrorInterceptorService implements HttpInterceptor {
               if (error.error.detail === 'Invalid token.') {
                 this.userService.deleteStoredUserData();
               }
-              if (request.url == '/api/auth/login/') {
+              if (request.url.includes('/api/auth/login/')) {
                 this.alertService.presentLoginFailedAlert();
+                return throwError(error);
               } else {
                 // For any other 401 error, redirect to login page
                 this.userService.deleteStoredUserData();
                 this.router.navigate(['/login']);
-                return;
+                return throwError(error);
               }
-              return;
             }
           }
           rollbar.error(new Error(error.message).stack);

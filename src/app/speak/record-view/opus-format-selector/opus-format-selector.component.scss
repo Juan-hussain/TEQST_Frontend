@@ -1,0 +1,251 @@
+.opus-format-selector {
+  padding: 1rem;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  margin: 1rem 0;
+
+  .format-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: var(--ion-color-dark);
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+
+    .format-description {
+      margin: 0;
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  }
+
+  .format-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .format-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--ion-color-light-shade);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover {
+      background: var(--ion-color-light-tint);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    &.selected {
+      border-color: var(--ion-color-primary);
+      background: var(--ion-color-primary-tint);
+      box-shadow: 0 0 0 3px rgba(var(--ion-color-primary-rgb), 0.1);
+    }
+
+    &.recommended {
+      border-color: var(--ion-color-success);
+      background: var(--ion-color-success-tint);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, var(--ion-color-success), var(--ion-color-primary));
+        border-radius: 10px;
+        z-index: -1;
+      }
+    }
+
+    .format-radio {
+      margin-right: 1rem;
+      flex-shrink: 0;
+
+      ion-radio {
+        --color: var(--ion-color-primary);
+        --color-checked: var(--ion-color-primary);
+      }
+    }
+
+    .format-info {
+      flex: 1;
+      min-width: 0;
+
+      .format-name {
+        font-weight: 600;
+        color: var(--ion-color-dark);
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .recommended-badge {
+          font-size: 0.7rem;
+          padding: 0.2rem 0.5rem;
+        }
+      }
+
+      .format-description {
+        color: var(--ion-color-medium);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+      }
+
+      .format-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          font-size: 0.8rem;
+          color: var(--ion-color-medium);
+          background: var(--ion-color-light);
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+
+          ion-icon {
+            font-size: 0.9rem;
+            color: var(--ion-color-primary);
+          }
+        }
+      }
+    }
+
+    .format-icon {
+      margin-left: 1rem;
+      flex-shrink: 0;
+
+      ion-icon {
+        font-size: 1.5rem;
+        padding: 0.5rem;
+        background: var(--ion-color-light);
+        border-radius: 50%;
+      }
+    }
+  }
+
+  .opus-status {
+    margin-top: 1rem;
+
+    .opus-warning {
+      --background: var(--ion-color-warning-tint);
+      --color: var(--ion-color-warning-shade);
+      border-radius: 8px;
+    }
+  }
+
+  .format-help {
+    text-align: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ion-color-light-shade);
+
+    ion-button {
+      --color: var(--ion-color-primary);
+      font-size: 0.9rem;
+
+      ion-icon {
+        margin-right: 0.25rem;
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .opus-format-selector {
+    padding: 0.75rem;
+
+    .format-option {
+      padding: 0.75rem;
+
+      .format-info {
+        .format-details {
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .detail-item {
+            justify-content: flex-start;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .opus-format-selector {
+    background: var(--ion-color-dark-shade);
+
+    .format-header h3 {
+      color: var(--ion-color-light);
+    }
+
+    .format-option {
+      background: var(--ion-color-dark-tint);
+
+      &:hover {
+        background: var(--ion-color-dark);
+      }
+
+      .format-info .format-name {
+        color: var(--ion-color-light);
+      }
+
+      .format-details .detail-item {
+        background: var(--ion-color-dark-shade);
+        color: var(--ion-color-light-shade);
+      }
+    }
+  }
+}
+
+// Animation for format changes
+.format-option {
+  animation: fadeInUp 0.3s ease-out;
+
+  &.selected {
+    animation: pulse 0.6s ease-out;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+

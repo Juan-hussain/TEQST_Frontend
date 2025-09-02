@@ -2,6 +2,7 @@ import {Injectable} from '@angular/core';
 import {ToastController} from '@ionic/angular';
 import {Observable, Subject, BehaviorSubject} from 'rxjs';
 import * as RecordRTC from 'recordrtc';
+import {OpusAudioService, AudioFormat} from './opus-audio.service';
 
 import {SentenceStatus} from 'src/app/interfaces/sentence-status';
 import {
@@ -26,6 +27,7 @@ export class AudioRecordingService {
 
   private stream: MediaStream;
   private activeRecorder;
+  private currentAudioFormat: AudioFormat = { type: 'wav', mimeType: 'audio/wav', extension: 'wav', quality: 'medium', bitrate: 16000, sampleRate: 16000, channels: 1 };
 
   private recordingFailed$ = new Subject<string>();
   private isRecording$ = new BehaviorSubject<boolean>(false);
@@ -46,7 +48,8 @@ export class AudioRecordingService {
               private alertService: AlertManagerService,
               private recordingUploadService: RecordingUploadService,
               private textService: TextServiceService,
-              private playbackService: RecordingPlaybackService) {
+              private playbackService: RecordingPlaybackService,
+              private opusAudioService: OpusAudioService) {
 
     this.subscribeToServices();
     this.alertService.presentRecordingInfoAlert();
@@ -80,6 +83,28 @@ export class AudioRecordingService {
 
   getRecordingState(): Observable<boolean> {
     return this.isRecording$.asObservable();
+  }
+
+  /**
+   * Set the audio format for recording
+   */
+  setAudioFormat(format: AudioFormat): void {
+    this.currentAudioFormat = format;
+    this.opusAudioService.setAudioFormat(format);
+  }
+
+  /**
+   * Get the current audio format
+   */
+  getCurrentAudioFormat(): AudioFormat {
+    return this.currentAudioFormat;
+  }
+
+  /**
+   * Check if Opus is supported
+   */
+  isOpusSupported(): boolean {
+    return this.opusAudioService.isOpusCodecSupported();
   }
 
   isMediaStreamActive(): boolean {
@@ -214,20 +239,28 @@ export class AudioRecordingService {
     });
   }
 
-  private initiateRecording(): void {
+  private async initiateRecording(): Promise<void> {
     console.log('Initiating recording with stream:', this.stream);
     try {
-      // set the quality properties of the recorder
-      this.activeRecorder = new RecordRTC.StereoAudioRecorder(this.stream, {
-        type: 'audio',
-        mimeType: 'audio/wav',
-        audioBitsPerSecond: 16000,
-        desiredSampRate: 16000,
-        numberOfAudioChannels: 1, // set mono recording
-      });
-      console.log('Recorder created:', this.activeRecorder);
-      this.activeRecorder.record();
-      console.log('Recording started');
+      // set the quality properties of the recorder based on current format
+      if (this.currentAudioFormat.type === 'opus' && this.opusAudioService.isOpusCodecSupported()) {
+        // Use Opus recording
+        await this.opusAudioService.startRecording(this.stream);
+        this.activeRecorder = 'opus'; // Mark as Opus recorder
+        console.log('Opus recording started');
+      } else {
+        // Fallback to WAV recording
+        this.activeRecorder = new RecordRTC.StereoAudioRecorder(this.stream, {
+          type: 'audio',
+          mimeType: this.currentAudioFormat.mimeType,
+          audioBitsPerSecond: this.currentAudioFormat.bitrate * 1000,
+          desiredSampRate: this.currentAudioFormat.sampleRate,
+          numberOfAudioChannels: 1, // set mono recording
+        });
+        console.log('WAV recorder created:', this.activeRecorder);
+        this.activeRecorder.record();
+        console.log('WAV recording started');
+      }
       this.startRecordingTimeout();
       this.isRecording$.next(true);
     } catch (error) {
@@ -301,7 +334,7 @@ export class AudioRecordingService {
     console.log(`Saving recording for sentence ${index}, isReRecording: ${isReRecording}, recordingId: ${this.recordingId}`);
     
     const sentenceRecording =
-      new SentenceRecordingModel(this.recordingId, index, blob);
+      new SentenceRecordingModel(this.recordingId, index, blob, this.currentAudioFormat);
     // add recording to cache in case speaker wants to listen to it
     this.playbackService.addToCache(sentenceRecording);
     this.uploadRecording(sentenceRecording, isReRecording);
@@ -329,7 +362,7 @@ export class AudioRecordingService {
     return false; // For now, allow multiple uploads but log them
   }
 
-  stopRecording(): void {
+  async stopRecording(): Promise<void> {
     // check if recording is active if not do nothing
     if (this.activeRecorder) {
 
@@ -340,20 +373,37 @@ export class AudioRecordingService {
 
       this.stopRecordingTimeout();
 
-      setTimeout(() => {
-        currentRecorder.stop((blob: Blob) => {
-          this.saveRecording(currentSentence, isReRecording, blob);
-        }, () => {
-          this.recordingFailed$.next();
-        });
-      }, 400);
+      try {
+        let blob: Blob;
+        
+        if (currentRecorder === 'opus') {
+          // Handle Opus recording
+          const result = await this.opusAudioService.stopRecording();
+          blob = result.blob;
+        } else {
+          // Handle WAV recording
+          blob = await new Promise<Blob>((resolve, reject) => {
+            setTimeout(() => {
+              currentRecorder.stop((blob: Blob) => {
+                resolve(blob);
+              }, () => {
+                reject(new Error('Failed to stop recording'));
+              });
+            }, 400);
+          });
+        }
+        
+        this.saveRecording(currentSentence, isReRecording, blob);
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        this.recordingFailed$.next();
+      }
 
       this.resetRecorder();
       if (currentSentence === this.furthestSentence) {
         this.textService.increaseFurthestSentence();
       }
     }
-
   }
 
   resetRecorder(): void {
@@ -365,11 +415,11 @@ export class AudioRecordingService {
   }
 
   // save the current recording and start the next one
-  nextRecording(): void {
+  async nextRecording(): Promise<void> {
     this.stopRecordingTimeout();
 
     if (this.errorInPreviousRecording === true) {
-      this.stopRecording();
+      await this.stopRecording();
       return;
     }
 
@@ -378,13 +428,31 @@ export class AudioRecordingService {
     const currentRecorder = this.activeRecorder;
     const isReRecording = this.sentenceHasRecording;
 
-    setTimeout(() => {
-      currentRecorder.stop((blob: Blob) => {
-        this.saveRecording(currentSentence, isReRecording, blob);
-      }, () => {
-        this.recordingFailed$.next();
-      });
-    }, 400);
+    try {
+      let blob: Blob;
+      
+      if (currentRecorder === 'opus') {
+        // Handle Opus recording
+        const result = await this.opusAudioService.stopRecording();
+        blob = result.blob;
+      } else {
+        // Handle WAV recording
+        blob = await new Promise<Blob>((resolve, reject) => {
+          setTimeout(() => {
+            currentRecorder.stop((blob: Blob) => {
+              resolve(blob);
+            }, () => {
+              reject(new Error('Failed to stop recording'));
+            });
+          }, 400);
+        });
+      }
+      
+      this.saveRecording(currentSentence, isReRecording, blob);
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      this.recordingFailed$.next();
+    }
 
     if (this.activeSentence === this.furthestSentence) {
       this.textService.increaseFurthestSentence();

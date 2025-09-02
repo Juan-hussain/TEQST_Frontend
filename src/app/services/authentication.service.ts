@@ -75,15 +75,23 @@ export class AuthenticationService {
   // redirect to login, and loging out
   logout(): void {
     const url = this.SERVER_URL + '/api/auth/logout/';
-    this.http.post(url, '', this.httpOptions).subscribe(() => {
-      /* reset the auth token manually
-         because on back button press the page isn't refreshed */
-      this.usermgmtService.deleteStoredUserData();
-      this.usermgmtService.clearLoggingData();
-      this.stopTokenValidation();
-      // this.navCtrl.navigateForward('/login');
-      this.navCtrl.navigateRoot('/login');
-    });
+    this.http.post(url, '', this.httpOptions).subscribe(
+      () => {
+        // Server logout successful
+        this.usermgmtService.deleteStoredUserData();
+        this.usermgmtService.clearLoggingData();
+        this.stopTokenValidation();
+        this.navCtrl.navigateRoot('/login');
+      },
+      (error) => {
+        // Server logout failed, but still logout locally
+        console.warn('Server logout failed, logging out locally:', error);
+        this.usermgmtService.deleteStoredUserData();
+        this.usermgmtService.clearLoggingData();
+        this.stopTokenValidation();
+        this.navCtrl.navigateRoot('/login');
+      }
+    );
   }
 
   // Check if user has a valid token by making a request to validate it
@@ -104,7 +112,9 @@ export class AuthenticationService {
             observer.next(false);
             observer.complete();
           } else {
-            // Other error, assume token is still valid
+            // For network errors or other issues, assume token is still valid
+            // This prevents users from being logged out due to temporary network issues
+            console.warn('Token validation failed with non-401 error:', error);
             observer.next(true);
             observer.complete();
           }

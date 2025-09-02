@@ -1,37 +1,92 @@
-/.angular/cache
-# Specifies intentionally untracked files to ignore when using Git
-# http://git-scm.com/docs/gitignore
+# See http://help.github.com/ignore-files/ for more about ignoring files.
 
-*~
-*.sw[mnpcod]
-.tmp
-*.tmp
-*.tmp.*
-*.sublime-project
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
 *.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+# System Files
 .DS_Store
 Thumbs.db
-UserInterfaceState.xcuserstate
-$RECYCLE.BIN/
 
+# Environment files
+.env
+*.env
+environment.ts
+environment.prod.ts
+
+# Build artifacts
+www/
+platforms/
+plugins/
+
+# Logs
 *.log
-log.txt
-npm-debug.log*
+logs/
 
-/.idea
-/.ionic
-/.sass-cache
-/.sourcemaps
-/.versions
-/.vscode
-/.angular
-/coverage
-/dist
-/node_modules
-/platforms
-/plugins
-/www
-typings/cordova-typings.d.ts
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-proxy.config.json
-constants.ts
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env

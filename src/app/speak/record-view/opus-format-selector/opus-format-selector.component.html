@@ -1,0 +1,80 @@
+<div class="opus-format-selector" *ngIf="showFormatSelector">
+  <div class="format-header">
+    <h3>Audio Format Settings</h3>
+    <p class="format-description">
+      Choose your preferred audio format and quality for recording
+    </p>
+  </div>
+
+  <div class="format-options">
+    <div class="format-option" 
+         *ngFor="let format of availableFormats" 
+         [class.selected]="selectedFormat === format"
+         [class.recommended]="isFormatRecommended(format)"
+         (click)="onFormatChange(format)">
+      
+      <div class="format-radio">
+        <ion-radio 
+          [value]="format" 
+          [checked]="selectedFormat === format"
+          (ionSelect)="onFormatChange(format)">
+        </ion-radio>
+      </div>
+      
+      <div class="format-info">
+        <div class="format-name">
+          {{ getFormatDisplayName(format) }}
+          <ion-badge *ngIf="isFormatRecommended(format)" color="success" class="recommended-badge">
+            Recommended
+          </ion-badge>
+        </div>
+        
+        <div class="format-description">
+          {{ getFormatDescription(format) }}
+        </div>
+        
+        <div class="format-details">
+          <span class="detail-item">
+            <ion-icon name="time-outline"></ion-icon>
+            Est. size (1 min): {{ getFileSizeEstimate(format, 60) }}
+          </span>
+          
+          <span class="detail-item" *ngIf="format.type === 'opus'">
+            <ion-icon name="musical-notes-outline"></ion-icon>
+            {{ format.sampleRate }}Hz
+          </span>
+          
+          <span class="detail-item" *ngIf="format.type === 'opus'">
+            <ion-icon name="speedometer-outline"></ion-icon>
+            {{ format.bitrate }}kbps
+          </span>
+        </div>
+      </div>
+      
+      <div class="format-icon">
+        <ion-icon 
+          [name]="format.type === 'opus' ? 'musical-notes' : 'disc'"
+          [color]="format.type === 'opus' ? 'primary' : 'medium'">
+        </ion-icon>
+      </div>
+    </div>
+  </div>
+
+  <div class="opus-status" *ngIf="!isOpusSupported">
+    <ion-alert 
+      header="Opus Not Available" 
+      [isOpen]="!isOpusSupported"
+      [buttons]="['OK']"
+      class="opus-warning">
+      <p>Opus codec is not supported in your browser. WAV format will be used instead.</p>
+    </ion-alert>
+  </div>
+
+  <div class="format-help">
+    <ion-button fill="clear" size="small" (click)="showHelp()">
+      <ion-icon name="help-circle-outline" slot="start"></ion-icon>
+      Learn more about audio formats
+    </ion-button>
+  </div>
+</div>
+

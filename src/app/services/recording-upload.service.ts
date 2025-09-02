@@ -44,16 +44,25 @@ export class RecordingUploadService {
     const queueElement = this.uploadQueue.shift();
     const isReUpload = queueElement[1];
     const sentenceRecording = queueElement[0];
-    const audioFile = new File([sentenceRecording.audioBlob], 'recording.wav');
+    
+    // Determine file extension based on audio format
+    const fileExtension = sentenceRecording.audioFormat?.extension || 'wav';
+    const audioFile = new File([sentenceRecording.audioBlob], `recording.${fileExtension}`);
     const formData = new FormData();
     formData.append('audiofile', audioFile);
+    
+    // Add audio format information if available
+    if (sentenceRecording.audioFormat) {
+      formData.append('audio_format', sentenceRecording.audioFormat.type);
+      formData.append('audio_quality', sentenceRecording.audioFormat.quality);
+    }
     const sentenceRecordingUrl = this.SERVER_URL + '/api/spk/sentencerecordings/';
 
     if (isReUpload) {
       // replace existing sentence recording
       const url = sentenceRecordingUrl +
         sentenceRecording.recordingId +
-        `/?index=${sentenceRecording.sentenceNumber}`;
+        `/${sentenceRecording.sentenceNumber}/`;
       this.http.put<RecordingUploadResponse>(
           url,
           formData).subscribe((response) => {

@@ -40,10 +40,9 @@ export class AccessGuard implements CanActivate {
     // redirect user to login page if he is not logged in
     if (requiresLogin) {
       if (!this.authService.isLoggedIn()) {
-        if (state.url !== '/admin') {
-          this.router.navigate(['/login'], {queryParams: {next: state.url}});
-          return false;
-        }
+        // Always redirect to login if not authenticated, regardless of URL
+        this.router.navigate(['/login'], {queryParams: {next: state.url}});
+        return false;
       } else {
         // User has a token, validate it with the server
         return new Observable(observer => {
@@ -69,6 +68,7 @@ export class AccessGuard implements CanActivate {
         });
       }
     }
+    
     // Only allow access to the route if the user is publisher
     if (requiredRole === 'publisher') {
       if (!this.userService.getIsPublisher()) {
@@ -76,6 +76,7 @@ export class AccessGuard implements CanActivate {
         return false;
       }
     }
+    
     /* If the redirectIfLoggedIn flag is set,
        the user is redirected to the speak tab
        if he is already authenticated */
@@ -85,6 +86,7 @@ export class AccessGuard implements CanActivate {
         return false;
       }
     }
+    
     return true;
   }
 
