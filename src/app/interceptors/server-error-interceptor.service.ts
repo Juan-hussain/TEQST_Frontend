@@ -20,9 +20,7 @@ import {RollbarService} from 'src/app/rollbar';
 export class ServerErrorInterceptorService implements HttpInterceptor {
 
   constructor(private alertService: AlertManagerService,
-              private userService: UsermgmtService,
-              private injector: Injector,
-              private router: Router) {}
+              private injector: Injector) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler):
     Observable<HttpEvent<any>> {
@@ -31,6 +29,8 @@ export class ServerErrorInterceptorService implements HttpInterceptor {
         retry(1),
         catchError((error: HttpErrorResponse) => {
           const rollbar = this.injector.get(RollbarService);
+          const userService = this.injector.get(UsermgmtService);
+          const router = this.injector.get(Router);
 
           if (error.error instanceof ErrorEvent) {
           // client side error
@@ -40,15 +40,15 @@ export class ServerErrorInterceptorService implements HttpInterceptor {
             // If the client uses an invalid token delete the locally stored one
             // TODO: improve api error for easier checking
               if (error.error.detail === 'Invalid token.') {
-                this.userService.deleteStoredUserData();
+                userService.deleteStoredUserData();
               }
               if (request.url.includes('/api/auth/login/')) {
                 this.alertService.presentLoginFailedAlert();
                 return throwError(error);
               } else {
                 // For any other 401 error, redirect to login page
-                this.userService.deleteStoredUserData();
-                this.router.navigate(['/login']);
+                userService.deleteStoredUserData();
+                router.navigate(['/login']);
                 return throwError(error);
               }
             }
