@@ -218,8 +218,20 @@ export class OpusAudioService {
     }
 
     return new Promise((resolve, reject) => {
+      let recordedData: Uint8Array | ArrayBuffer;
+
+      this.opusRecorder.ondataavailable = (data: Uint8Array | ArrayBuffer) => {
+        recordedData = data;
+      };
+
       this.opusRecorder.stop()
-        .then((blob) => {
+        .then(() => {
+          if (!recordedData) {
+            reject(new Error('No Opus audio data was produced'));
+            return;
+          }
+
+          const blob = new Blob([recordedData], {type: this.currentFormat.mimeType});
           console.log('Opus recording stopped, blob size:', blob.size);
           resolve(blob);
         })
