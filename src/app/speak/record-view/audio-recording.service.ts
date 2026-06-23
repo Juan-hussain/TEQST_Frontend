@@ -52,7 +52,14 @@ export class AudioRecordingService {
               private opusAudioService: OpusAudioService) {
 
     this.subscribeToServices();
+    this.useBestAvailableAudioFormat();
     this.alertService.presentRecordingInfoAlert();
+  }
+
+  private useBestAvailableAudioFormat(): void {
+    if (this.opusAudioService.isOpusCodecSupported()) {
+      this.currentAudioFormat = this.opusAudioService.getCurrentFormat();
+    }
   }
 
   /* subscribe to all needed variables from the services
@@ -478,12 +485,28 @@ export class AudioRecordingService {
   // cancel current recording without saving
   abortRecording(): void {
     this.stopRecordingTimeout();
+    if (this.activeRecorder === 'opus') {
+      this.opusAudioService.stopRecording().catch((error) => {
+        console.error('Error aborting Opus recording:', error);
+      });
+    }
     this.resetRecorder();
   }
 
   // abort the current recording and start a new one
-  restartRecording(): void {
+  async restartRecording(): Promise<void> {
     this.stopRecordingTimeout();
+    if (this.activeRecorder === 'opus') {
+      try {
+        await this.opusAudioService.stopRecording();
+        await this.opusAudioService.startRecording(this.stream);
+        this.startRecordingTimeout();
+      } catch (error) {
+        console.error('Error restarting Opus recording:', error);
+        this.recordingFailed$.next();
+      }
+      return;
+    }
     this.activeRecorder.stop();
     this.activeRecorder.record();
     this.startRecordingTimeout();
