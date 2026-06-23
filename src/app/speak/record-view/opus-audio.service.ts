@@ -76,11 +76,11 @@ export class OpusAudioService {
         this.opusRecorder = new OpusRecorder({
           encoderPath: '/assets/opus-recorder/encoderWorker.min.js',
           encoderApplication: 2049, // OPUS_APPLICATION_AUDIO
-          encoderFrameSize: 960, // FRAME_SIZE_20MS
+          encoderFrameSize: 20, // 20 ms Opus frame size
           encoderComplexity: 6,
-          encoderBitrate: this.currentFormat.bitrate,
+          encoderBitRate: this.currentFormat.bitrate,
           encoderSampleRate: this.currentFormat.sampleRate,
-          encoderChannels: 1
+          numberOfChannels: 1
         });
         this.isOpusSupported = true;
         console.log('Opus recorder initialized successfully');
@@ -118,8 +118,8 @@ export class OpusAudioService {
     
     if (this.isOpusSupported && format.type === 'opus') {
       // Update Opus encoder settings
-      this.opusRecorder.encoderBitrate = format.bitrate;
-      this.opusRecorder.encoderSampleRate = format.sampleRate;
+      this.opusRecorder.config.encoderBitRate = format.bitrate;
+      this.opusRecorder.config.encoderSampleRate = format.sampleRate;
     }
   }
 
