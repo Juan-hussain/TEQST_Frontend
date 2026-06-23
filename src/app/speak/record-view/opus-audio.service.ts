@@ -65,8 +65,8 @@ export class OpusAudioService {
   };
 
   constructor() {
-    this.initializeOpusRecorder();
     this.currentFormat = this.OPUS_PRESETS.medium; // Default to medium quality
+    this.initializeOpusRecorder();
   }
 
   private async initializeOpusRecorder(): Promise<void> {
