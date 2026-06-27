@@ -283,6 +283,14 @@ export class ManagePage extends BaseComponent {
     });
   }
 
+  openRenameTextAlert($event, text): void {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.manageTextUIService.openRenameTextAlert(text, this.texts, () => {
+      this.initTexts();
+    });
+  }
+
   initTexts(): void {
     this.manageTextUIService.initTextList(this.currentFolder, (texts) => {
       this.texts = texts;

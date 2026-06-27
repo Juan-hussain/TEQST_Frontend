@@ -88,4 +88,49 @@ export class ManageTextUIService {
     });
     await alert.present();
   }
+
+  async openRenameTextAlert(text, existingTexts, successCallback): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Rename text',
+      inputs: [
+        {
+          name: 'title',
+          type: 'text',
+          value: text.title,
+          placeholder: 'New text title',
+        },
+      ],
+      buttons: [
+        'Cancel',
+        {
+          text: 'Save',
+          handler: (data): boolean => {
+            const title = (data?.title || '').trim();
+
+            if (!title) {
+              this.alertManager.showErrorAlertNoRedirection('', 'Text title cannot be empty');
+              return false;
+            }
+
+            const duplicate = existingTexts.some((existingText) =>
+              existingText.id !== text.id && existingText.title === title);
+            if (duplicate) {
+              this.alertManager.showErrorAlertNoRedirection('', 'A text with this title already exists in this folder');
+              return false;
+            }
+
+            text.rename(title)
+                .subscribe(
+                    successCallback,
+                    (err) => this.alertManager.showErrorAlertNoRedirection(
+                        err.status,
+                        err.statusText),
+                );
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
 }

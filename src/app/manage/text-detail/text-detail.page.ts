@@ -1,4 +1,4 @@
-import {PopoverController} from '@ionic/angular';
+import {AlertController, PopoverController} from '@ionic/angular';
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Observable} from 'rxjs';
@@ -38,6 +38,7 @@ export class TextDetailPage extends BaseComponent implements OnInit {
   constructor(public loaderService: LoaderService,
               private manageFolderService: ManageFolderService,
               private route: ActivatedRoute,
+              private alertController: AlertController,
               private router: Router,
               private alertManager: AlertManagerService,
               private statsService: StatisticsService,
@@ -112,6 +113,49 @@ export class TextDetailPage extends BaseComponent implements OnInit {
         speakerStats.textrecording_id,
         speakerStats.finished);
     this.textStateService.setRecordingState(this.recordingState);
+  }
+
+  async openRenameTextAlert(): Promise<void> {
+    const currentTitle = this.text?.title || '';
+    const alert = await this.alertController.create({
+      header: 'Rename text',
+      inputs: [
+        {
+          name: 'title',
+          type: 'text',
+          value: currentTitle,
+          placeholder: 'New text title',
+        },
+      ],
+      buttons: [
+        'Cancel',
+        {
+          text: 'Save',
+          handler: (data): boolean => {
+            const title = (data?.title || '').trim();
+            if (!title) {
+              this.alertManager.showErrorAlertNoRedirection('', 'Text title cannot be empty');
+              return false;
+            }
+            if (title === currentTitle) {
+              return true;
+            }
+            this.manageFolderService.renameText(this.text.id.toString(), title)
+                .subscribe(
+                    (textObject) => {
+                      this.text = textObject;
+                      this.textStateService.setText(this.text);
+                    },
+                    (err) => this.alertManager.showErrorAlertNoRedirection(
+                        err.status,
+                        err.statusText),
+                );
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   // TODO: check if ionViewWillEnter is the right lifecycle hook

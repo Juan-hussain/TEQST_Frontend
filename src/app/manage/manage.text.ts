@@ -22,4 +22,8 @@ export class Text {
     delete(): Observable<object> {
       return Text.folderService.deleteText(this.id);
     }
+
+    rename(title: string): Observable<object> {
+      return Text.folderService.renameText(this.id, title);
+    }
 }

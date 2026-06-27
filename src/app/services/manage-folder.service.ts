@@ -84,6 +84,11 @@ export class ManageFolderService {
     return this.http.delete(url);
   }
 
+  renameText(textId: string, title: string): Observable<TextObject> {
+    const url = this.SERVER_URL + `/api/pub/texts/${textId}/`;
+    return this.http.patch<TextObject>(url, {title});
+  }
+
   deleteTexts(textIds): Observable<object> {
     const url = this.SERVER_URL + `/api/pub/texts/delete/`;
     return this.http.post(url, textIds);

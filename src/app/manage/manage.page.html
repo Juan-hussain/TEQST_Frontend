@@ -77,6 +77,9 @@
         (click)="showMultiSelect ? toggleSelectItem($event) : null">
         <ion-icon name="reader" color="dark" class="textIcon"></ion-icon>{{ text.title }}
         <ion-buttons class="delete" [class.active]="!showMultiSelect" slot="end">
+          <ion-button (click)="openRenameTextAlert($event, text)">
+            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+          </ion-button>
           <ion-button color="danger" (click)="openDeleteTextAlert($event, text)">
             <ion-icon name="trash" slot="icon-only"></ion-icon>
           </ion-button>
