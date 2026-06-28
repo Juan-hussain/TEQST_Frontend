@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {IonNav, IonToggle, ModalController, NavParams} from '@ionic/angular';
 import {ShareFolderService} from 'src/app/services/share-folder.service';
+import {AlertManagerService} from 'src/app/services/alert-manager.service';
 import {ListenerDataService} from '../listener-data.service';
 
 @Component({
@@ -19,7 +20,8 @@ export class SelectSpeakerPage implements OnInit {
   constructor(public navParams: NavParams,
               public viewCtrl: ModalController,
               private listenerData: ListenerDataService,
-              private shareFolderService: ShareFolderService) {
+              private shareFolderService: ShareFolderService,
+              private alertManagerService: AlertManagerService) {
 
     this.navComponent = navParams.get('navComponent');
   }
@@ -34,11 +36,11 @@ export class SelectSpeakerPage implements OnInit {
   }
 
   async allUsersToggleChanged($event): Promise<void> {
-    this.listenerData.setAllSpeakers($event.detail.value);
+    this.listenerData.setAllSpeakers($event.detail.checked);
   }
 
   getValidatedListeningData()
-  :{listenerIds: number[], speakerIds: number[], accents: string[], allSpeakers: boolean} {
+  :{listenerIds: number[], speakerIds: number[], accents: string[], allSpeakers: boolean} | null {
     const listeners = this.listenerData.getListeners();
     if (listeners.length == 0) {
       alert('must have at least one listener');
@@ -65,6 +67,9 @@ export class SelectSpeakerPage implements OnInit {
     console.log('backend api call');
     const folderId = this.listenerData.getFolderId();
     const data = this.getValidatedListeningData();
+    if (!data) {
+      return;
+    }
 
     this.shareFolderService.createListening(
         folderId, data.listenerIds, data.speakerIds, data.accents, data.allSpeakers,
@@ -76,14 +81,20 @@ export class SelectSpeakerPage implements OnInit {
         folderId, data.speakerIds, data.allSpeakers
       ).subscribe(() => {
         console.log('Speaker list updated');
-	this.navComponent.popToRoot();
+        this.navComponent.popToRoot();
       }, (err) => {
         console.error('Failed to update speaker list', err);
-        this.navComponent.popToRoot();
+        this.alertManagerService.showErrorAlertNoRedirection(
+            err.status || 'Error',
+            err.error?.detail || err.statusText || 'Could not update speaker access.',
+        );
       });
     }, (err) => {
       console.log('error!!');
-      alert('Could not create listener permission');
+      this.alertManagerService.showErrorAlertNoRedirection(
+          err.status || 'Error',
+          err.error?.detail || err.statusText || 'Could not create listener permission.',
+      );
     });
 
 
@@ -97,6 +108,9 @@ export class SelectSpeakerPage implements OnInit {
     const listeningId = this.listenerData.getListeningId();
     const folderId = this.listenerData.getFolderId();
     const data = this.getValidatedListeningData();
+    if (!data) {
+      return;
+    }
     this.shareFolderService.updateListening(
         listeningId, data.listenerIds, data.speakerIds, data.accents, data.allSpeakers,
     ).subscribe((res) => {
@@ -110,12 +124,16 @@ export class SelectSpeakerPage implements OnInit {
         this.navComponent.popToRoot();
       }, (err) => {
         console.error('Speaker update failed', err);
-        this.navComponent.popToRoot();
+        this.alertManagerService.showErrorAlertNoRedirection(
+            err.status || 'Error',
+            err.error?.detail || err.statusText || 'Could not update speaker access.',
+        );
       });
-
-      this.navComponent.popToRoot();
     }, (err) => {
-      alert('could not create listening');
+      this.alertManagerService.showErrorAlertNoRedirection(
+          err.status || 'Error',
+          err.error?.detail || err.statusText || 'Could not update listening permission.',
+      );
     });
   }
 

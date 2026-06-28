@@ -44,6 +44,12 @@ export class ManageListeningsPage implements OnInit {
         .then((listenings) => {
           this.listenings = listenings;
           this.listeningListElem.nativeElement.classList.add('loaded');
+        })
+        .catch((err) => {
+          this.alertManagerService.showErrorAlertNoRedirection(
+              err.status || 'Error',
+              err.error?.detail || err.statusText || 'Could not load listening permissions.',
+          );
         });
   }
 

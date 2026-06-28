@@ -3,6 +3,7 @@ import {IonNav, ModalController, NavParams} from '@ionic/angular';
 
 import {User} from 'src/app/interfaces/user';
 import {ShareFolderService} from 'src/app/services/share-folder.service';
+import {AlertManagerService} from 'src/app/services/alert-manager.service';
 import {ListenerDataService} from '../listener-data.service';
 import {ManageListeningsPage}
   from '../manage-listenings/manage-listenings.page';
@@ -27,7 +28,8 @@ export class SelectListenerPage implements OnInit {
   constructor(public navParams: NavParams,
               public viewCtrl: ModalController,
               private shareFolderService: ShareFolderService,
-              private listenerData: ListenerDataService) {
+              private listenerData: ListenerDataService,
+              private alertManagerService: AlertManagerService) {
 
     this.navComponent = navParams.get('navComponent');
   }
@@ -44,6 +46,14 @@ export class SelectListenerPage implements OnInit {
         .then((allUsers) => {
           this.allUsers = allUsers;
           this.filteredUsers = allUsers;
+        })
+        .catch((err) => {
+          this.alertManagerService.showErrorAlertNoRedirection(
+              err.status || 'Error',
+              err.error?.detail || err.statusText || 'Could not load users.',
+          );
+          this.allUsers = [];
+          this.filteredUsers = [];
         });
     const lns = this.listenerData.getListeners();
     this.listeners = lns;
