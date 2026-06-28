@@ -60,7 +60,6 @@ export class RecorderComponent implements OnInit, OnDestroy {
             if (!this.hasInitializedRecorderUi) {
               this.hasInitializedRecorderUi = true;
               this.recordingService.presentRecordingInfoIfNeeded();
-              this.recordingService.requestUserAudio();
             }
           }
         });
