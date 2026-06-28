@@ -8,6 +8,7 @@ import {LoaderService} from 'src/app/services/loader.service';
 import {Folder} from 'src/app/speak/speak.folder';
 import {TimeStatsComponent} from '../time-stats/time-stats.component';
 import {AlertManagerService} from 'src/app/services/alert-manager.service';
+import {sortTextsNumerically} from 'src/app/utils/text-sort.util';
 
 @Component({
   selector: 'app-folder-content',
@@ -23,7 +24,7 @@ export class FolderContentPage extends BaseComponent implements OnInit {
   // public publishers: any
   public currentFolder: Folder = new Folder('', 'Folder', null)
   public subfolders: Folder[] = [];
-  public texts: Text[] = [];
+  public texts: any[] = [];
   public root_uid: string;
   public current_id = 'asdf';
   public canGoBack: boolean;
@@ -93,7 +94,7 @@ export class FolderContentPage extends BaseComponent implements OnInit {
         this.current_id, this.root_uid).subscribe((res) => {
       this.folderName = res['name'];
       this.timestats = res['timestats'];
-      this.texts = res['texts'];
+      this.texts = sortTextsNumerically(res['texts']);
     });
   }
 

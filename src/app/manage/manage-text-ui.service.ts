@@ -5,6 +5,7 @@ import {AlertManagerService} from 'src/app/services/alert-manager.service';
 import {ManageFolderService} from 'src/app/services/manage-folder.service';
 import {CreateTextPage} from './create-text/create-text.page';
 import {Text} from './manage.text';
+import {sortTextsNumerically} from 'src/app/utils/text-sort.util';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +28,7 @@ export class ManageTextUIService {
                   const text = new Text(textInfo.id, textInfo.title);
                   texts.push(text);
                 }
-                callback(texts);
+                callback(sortTextsNumerically(texts));
               } else {
                 this.alertManager.showErrorAlert(
                     '',

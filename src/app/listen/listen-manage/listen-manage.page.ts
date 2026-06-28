@@ -8,6 +8,7 @@ import {TextBasic} from 'src/app/interfaces/text-basic';
 import {FolderStatsPage} from 'src/app/manage/folder-stats/folder-stats.page';
 import {ListenerService} from 'src/app/services/listener.service';
 import {LoaderService} from 'src/app/services/loader.service';
+import {sortTextsNumerically} from 'src/app/utils/text-sort.util';
 
 @Component({
   selector: 'app-listen-manage',
@@ -63,7 +64,7 @@ export class ListenManagePage extends BaseComponent implements OnInit {
   async loadTexts(): Promise<void> {
     this.listenerService.loadContentsOfSharedFolder(this.currentFolderId)
         .subscribe((res) => {
-          this.texts = res['texts'];
+          this.texts = sortTextsNumerically(res['texts']);
         }, (err) => {
           alert(err);
         });
