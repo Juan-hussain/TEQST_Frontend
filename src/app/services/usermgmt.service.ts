@@ -44,6 +44,11 @@ export class UsermgmtService {
     return this.http.patch(url, dataToSend);
   }
 
+  changePassword(dataToSend): Observable<object> {
+    const url = this.SERVER_URL + '/api/user/change-password/';
+    return this.http.post(url, dataToSend);
+  }
+
   // deletes Authtoken and clears localStorage
   deleteStoredUserData(): void {
     // keep menu language in local storage

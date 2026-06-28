@@ -17,6 +17,7 @@ import {BaseComponent} from 'src/app/base-component';
 export class ProfilePage extends BaseComponent implements OnInit {
 
   public profileForm: FormGroup;
+  public passwordForm: FormGroup;
 
   allLangs: Language[] = [];
   allMenuLangs = [];
@@ -39,6 +40,12 @@ export class ProfilePage extends BaseComponent implements OnInit {
       country: [''],
       accent: [''],
       language_ids: [[]],
+    });
+
+    this.passwordForm = this.formBuilder.group({
+      current_password: ['', [Validators.required]],
+      new_password: ['', [Validators.required, Validators.minLength(8)]],
+      confirm_password: ['', [Validators.required]],
     });
   }
 
@@ -96,6 +103,51 @@ export class ProfilePage extends BaseComponent implements OnInit {
     const toast = await this.toastController.create({
       message: 'The data you entered is invalid.',
       duration: 2000,
+      color: 'danger',
+    });
+    toast.present();
+  }
+
+  passwordsMatch(): boolean {
+    return this.passwordForm.value.new_password === this.passwordForm.value.confirm_password;
+  }
+
+  changePassword(): void {
+    if (!this.passwordForm.valid || !this.passwordsMatch()) {
+      this.presentPasswordFailToast('Please enter matching passwords with at least 8 characters.');
+      return;
+    }
+
+    const payload = {
+      current_password: this.passwordForm.value.current_password,
+      new_password: this.passwordForm.value.new_password,
+    };
+
+    this.usermgmtService.changePassword(payload).subscribe(() => {
+      this.passwordForm.reset();
+      this.presentPasswordSavedToast();
+    }, (err) => {
+      const message = err?.error?.current_password?.[0] ||
+        err?.error?.new_password?.[0] ||
+        err?.error?.detail ||
+        'Password could not be updated.';
+      this.presentPasswordFailToast(message);
+    });
+  }
+
+  async presentPasswordSavedToast(): Promise<void> {
+    const toast = await this.toastController.create({
+      message: 'Your password has been updated.',
+      duration: 2500,
+      color: 'success',
+    });
+    toast.present();
+  }
+
+  async presentPasswordFailToast(message: string): Promise<void> {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
       color: 'danger',
     });
     toast.present();
