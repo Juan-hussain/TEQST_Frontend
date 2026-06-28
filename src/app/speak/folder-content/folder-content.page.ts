@@ -78,7 +78,7 @@ export class FolderContentPage extends BaseComponent implements OnInit {
           });
         },
         (err) => {
-          if (err.status = 403) {
+          if (err.status === 403) {
             this.alertManager.showErrorAlert(err.status, 'Invalid link!');
           } else {
             this.alertManager.showErrorAlert(err.status,

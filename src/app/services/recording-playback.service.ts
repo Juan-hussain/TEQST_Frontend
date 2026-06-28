@@ -4,6 +4,7 @@ import {BehaviorSubject, Observable} from 'rxjs';
 
 import {Constants} from 'src/app/constants';
 import {SentenceRecordingModel} from 'src/app/models/sentence-recording.model';
+import {AlertManagerService} from './alert-manager.service';
 import {AuthenticationService} from './authentication.service';
 
 @Injectable({
@@ -18,32 +19,42 @@ export class RecordingPlaybackService {
   private isPlaying = new BehaviorSubject<boolean>(false);
 
   constructor(public authenticationService: AuthenticationService,
-              private http: HttpClient) {}
+              private http: HttpClient,
+              private alertManagerService: AlertManagerService) {}
 
   public async playSentenceRecording(
       recordingId: number,
       sentenceNumber: number): Promise<void> {
+    try {
+      const cacheIndex = this.findCacheIndex(recordingId, sentenceNumber);
+      let audioBlob: Blob;
+      if (cacheIndex > -1) {
+        audioBlob = this.getCachedRecording(cacheIndex).audioBlob;
+      } else {
+        audioBlob = await this.fetchSentenceRecordingBlob(
+            recordingId,
+            sentenceNumber);
+        // cache the recording that was fetched from server
+        this.addToCache(new SentenceRecordingModel(
+            recordingId,
+            sentenceNumber,
+            audioBlob));
+      }
 
-    const cacheIndex = this.findCacheIndex(recordingId, sentenceNumber);
-    let audioBlob: Blob;
-    if (cacheIndex > -1) {
-      audioBlob = this.getCachedRecording(cacheIndex).audioBlob;
-    } else {
-      audioBlob = await this.fetchSentenceRecordingBlob(
-          recordingId,
-          sentenceNumber);
-      // cache the recording that was fetched from server
-      this.addToCache(new SentenceRecordingModel(
-          recordingId,
-          sentenceNumber,
-          audioBlob));
+      this.audio.src = URL.createObjectURL(audioBlob);
+      this.audio.load();
+
+      await this.audio.play();
+      this.isPlaying.next(true);
+    } catch (error) {
+      console.error('Audio playback failed:', error);
+      this.isPlaying.next(false);
+      this.alertManagerService.showErrorAlertNoRedirection(
+          'Playback unavailable',
+          'This recording could not be played in the current browser. The audio format may not be supported here.',
+      );
+      return;
     }
-
-    this.audio.src = URL.createObjectURL(audioBlob);
-    this.audio.load();
-
-    await this.audio.play();
-    this.isPlaying.next(true);
 
     // eventlistener to update ui during playback
     this.audio.addEventListener('play', () => {
