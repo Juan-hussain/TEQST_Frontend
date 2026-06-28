@@ -99,4 +99,24 @@ export class ManageListeningsPage implements OnInit {
   getStringOfUsernames(users): string {
     return users.map((user) => user.username).join(', ');
   }
+
+  getListeningSummary(listening): string {
+    if (listening.all_speakers) {
+      return 'All speakers';
+    }
+
+    const speakers = this.getStringOfUsernames(listening.speakers || []);
+    const accents = (listening.accents || []).join(', ');
+
+    if (speakers && accents) {
+      return `Speakers: ${speakers} | Accents: ${accents}`;
+    }
+    if (speakers) {
+      return `Speakers: ${speakers}`;
+    }
+    if (accents) {
+      return `Accents: ${accents}`;
+    }
+    return 'No speaker scope';
+  }
 }

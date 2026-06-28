@@ -1,5 +1,5 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {IonNav, IonSlides, IonToggle, ModalController, NavParams} from '@ionic/angular';
+import {IonNav, IonToggle, ModalController, NavParams} from '@ionic/angular';
 import {ShareFolderService} from 'src/app/services/share-folder.service';
 import {ListenerDataService} from '../listener-data.service';
 
@@ -10,9 +10,8 @@ import {ListenerDataService} from '../listener-data.service';
 })
 export class SelectSpeakerPage implements OnInit {
 
-  @ViewChild('slides', {static: true}) slider: IonSlides;
   @ViewChild('allToggle', {static: true}) allToggle: IonToggle;
-  segment = 0;
+  segment = '0';
 
   public navComponent: IonNav;
   public creating: boolean;
@@ -30,12 +29,8 @@ export class SelectSpeakerPage implements OnInit {
     this.allToggle.checked = this.listenerData.getAllSpeakers();
   }
 
-  async segmentChanged($event): Promise<void> {
-    await this.slider.slideTo($event.detail.value);
-  }
-
-  async slideChanged(): Promise<void> {
-    this.segment = await this.slider.getActiveIndex();
+  segmentChanged($event): void {
+    this.segment = $event.detail.value;
   }
 
   async allUsersToggleChanged($event): Promise<void> {

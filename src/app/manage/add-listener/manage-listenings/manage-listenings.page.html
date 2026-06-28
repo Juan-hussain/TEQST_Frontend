@@ -12,7 +12,10 @@
 <ion-content>
   <ion-list #listeningList class="fadeInWhenLoaded">
     <ion-item button *ngFor="let ln of listenings" (click)="openListening(ln)">
-      {{getStringOfUsernames(ln.listeners)}}
+      <ion-label>
+        <h2>{{getStringOfUsernames(ln.listeners)}}</h2>
+        <p>{{getListeningSummary(ln)}}</p>
+      </ion-label>
       <ion-buttons slot="end">
         <ion-button color="danger" (click)="openDeleteListeningAlert($event, ln.id)">
           <ion-icon name="trash" slot="icon-only"></ion-icon>

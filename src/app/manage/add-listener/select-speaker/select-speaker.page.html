@@ -24,14 +24,9 @@
     <ion-label>{{'manage.addListenerModal.selectSpeaker.allSpeakers' | translate}}</ion-label>
     <ion-toggle #allToggle (ionChange)="allUsersToggleChanged($event)"></ion-toggle>
   </ion-item>
-  <ion-slides #slides (ionSlideDidChange)="slideChanged()">
-    <ion-slide>
-      <app-select-spk-acc-seg></app-select-spk-acc-seg>
-    </ion-slide>
-    <ion-slide>
-      <app-select-spk-spk-seg></app-select-spk-spk-seg>
-    </ion-slide>
-  </ion-slides>
+
+  <app-select-spk-acc-seg *ngIf="segment === '0'"></app-select-spk-acc-seg>
+  <app-select-spk-spk-seg *ngIf="segment === '1'"></app-select-spk-spk-seg>
 </ion-content>
 <ion-footer class="ion-text-end">
   <ion-button *ngIf="creating" color="primary" (click)="createListening()">
