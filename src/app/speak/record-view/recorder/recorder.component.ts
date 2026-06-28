@@ -32,6 +32,7 @@ export class RecorderComponent implements OnInit, OnDestroy {
   public isLoaded = false;
 
   private ngUnsubscribe = new Subject<void>();
+  private hasInitializedRecorderUi = false;
 
   constructor(private textService: TextServiceService,
               private recordingService: AudioRecordingService,
@@ -40,9 +41,7 @@ export class RecorderComponent implements OnInit, OnDestroy {
     this.subscribeToServices();
   }
 
-  ngOnInit(): void {
-    this.recordingService.requestUserAudio();
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
@@ -55,9 +54,14 @@ export class RecorderComponent implements OnInit, OnDestroy {
   private subscribeToServices(): void {
     this.textService.getIsLoaded().pipe(takeUntil(this.ngUnsubscribe))
         .subscribe((isLoaded) => {
+          this.isLoaded = isLoaded;
           if (isLoaded) {
             this.updateProgressBar();
-            this.isLoaded = true;
+            if (!this.hasInitializedRecorderUi) {
+              this.hasInitializedRecorderUi = true;
+              this.recordingService.presentRecordingInfoIfNeeded();
+              this.recordingService.requestUserAudio();
+            }
           }
         });
     this.textService.getActiveSentenceIndex()

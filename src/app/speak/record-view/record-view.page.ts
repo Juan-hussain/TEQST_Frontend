@@ -24,11 +24,13 @@ export class RecordViewPage extends BaseComponent implements OnInit {
 
   public textTitle: string;
   public hasRecording: boolean;
+  public hasTextAccess = false;
   public isUploadActive = false;
   public isRightToLeft: boolean;
 
   private textId: number;
   private root_uid: string;
+  private noAccessAlertShown = false;
 
   constructor(public navCtrl: NavController,
               public loaderService: LoaderService,
@@ -52,6 +54,16 @@ export class RecordViewPage extends BaseComponent implements OnInit {
         });
     this.textService.getTextTitle().pipe(takeUntil(this.ngUnsubscribe))
         .subscribe((title) => this.textTitle = title);
+    this.textService.getHasFetchedText().pipe(takeUntil(this.ngUnsubscribe))
+        .subscribe((hasFetchedText) => this.hasTextAccess = hasFetchedText);
+    this.textService.getAccessDenied().pipe(takeUntil(this.ngUnsubscribe))
+        .subscribe((accessDenied) => {
+          if (accessDenied && !this.noAccessAlertShown) {
+            this.noAccessAlertShown = true;
+            this.stopAllMedia();
+            this.alertService.presentGoBackAlert('No Access');
+          }
+        });
     this.textService.getIsRightToLeft().pipe(takeUntil(this.ngUnsubscribe))
         .subscribe((isRightToLeft) => this.isRightToLeft = isRightToLeft);
     this.recordingUploadService.getIsUploadActive()

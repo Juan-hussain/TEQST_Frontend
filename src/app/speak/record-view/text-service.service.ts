@@ -26,6 +26,8 @@ export class TextServiceService {
   private textTitle = new BehaviorSubject<string>('');
   private isRightToLeft = new BehaviorSubject<boolean>(false);
   private isLoaded = new BehaviorSubject<boolean>(false);
+  private hasFetchedText = new BehaviorSubject<boolean>(false);
+  private accessDenied = new BehaviorSubject<boolean>(false);
 
   // Url Information
   private textId: number;
@@ -49,6 +51,8 @@ export class TextServiceService {
     this.textTitle.next('');
     this.isRightToLeft.next(false);
     this.isLoaded.next(false);
+    this.hasFetchedText.next(false);
+    this.accessDenied.next(false);
     this.isTextFetched = false;
     this.isRecordingExistsChecked = false;
   }
@@ -67,9 +71,13 @@ export class TextServiceService {
       this.isRightToLeft.next(text['is_right_to_left']);
       this.sharedfolderId = parseInt(text['shared_folder']);
       this.isTextFetched = true;
+      this.hasFetchedText.next(true);
+      this.accessDenied.next(false);
       console.log('Text fetched, isTextFetched:', this.isTextFetched);
       this.initActiveSentenceIfReady();
     }, (error) => {
+      this.hasFetchedText.next(false);
+      this.accessDenied.next(true);
       console.error('Error fetching text:', error);
     });
   }
@@ -197,6 +205,14 @@ export class TextServiceService {
 
   getIsLoaded(): Observable<boolean> {
     return this.isLoaded.asObservable();
+  }
+
+  getHasFetchedText(): Observable<boolean> {
+    return this.hasFetchedText.asObservable();
+  }
+
+  getAccessDenied(): Observable<boolean> {
+    return this.accessDenied.asObservable();
   }
 
   getSharedFolderId(): number {

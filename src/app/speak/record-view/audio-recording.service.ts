@@ -42,6 +42,7 @@ export class AudioRecordingService {
 
   private recordingTimeoutLength = 180000; // 3 min = 3*60*1000=180000
   private recordingTimeout;
+  private hasPresentedRecordingInfo = false;
 
   constructor(public authenticationService: AuthenticationService,
               public toastController: ToastController,
@@ -53,7 +54,6 @@ export class AudioRecordingService {
 
     this.subscribeToServices();
     this.useBestAvailableAudioFormat();
-    this.alertService.presentRecordingInfoAlert();
   }
 
   private useBestAvailableAudioFormat(): void {
@@ -86,6 +86,14 @@ export class AudioRecordingService {
 
   recordingFailed(): Observable<string> {
     return this.recordingFailed$.asObservable();
+  }
+
+  presentRecordingInfoIfNeeded(): void {
+    if (this.hasPresentedRecordingInfo) {
+      return;
+    }
+    this.hasPresentedRecordingInfo = true;
+    this.alertService.presentRecordingInfoAlert();
   }
 
   getRecordingState(): Observable<boolean> {
